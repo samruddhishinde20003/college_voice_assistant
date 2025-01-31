@@ -1,6 +1,7 @@
 import speech_recognition as sr
 import pyttsx3
 import spacy
+import requests
 from textblob import TextBlob
 
 
@@ -17,7 +18,7 @@ def speak_text(text):
 def extract_entities(command):
     """Extract key entities from the command."""
     doc = nlp(command)
-    entities = [ent.text for ent in doc.ents if ent.label_ in [""" Entities from the database """]]
+    entities = [ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG", "GPE"]]  # Adjust to fit your needs
     return entities
 
 def analyze_sentiment(command):
@@ -25,24 +26,61 @@ def analyze_sentiment(command):
     blob = TextBlob(command)
     return blob.sentiment.polarity
 
+def get_department_info(department_name):
+    """Fetch department info from the Flask backend."""
+    url = f"http://localhost:5000/departments/{department_name}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Department not found"}
+
+def get_faculty_info(faculty_name):
+    """Fetch faculty info from the Flask backend."""
+    url = f"http://localhost:5000/faculty/{faculty_name}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Faculty not found"}
+
+def get_event_info(event_name):
+    """Fetch event info from the Flask backend."""
+    url = f"http://localhost:5000/events/{event_name}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Event not found"}
+
 def interpret_command(command):
     """Interpret user command and return appropriate response."""
-    doc = nlp(command.lower())
+    command = command.lower()
     
     if "department" in command:
-        return "Let me find the department you're looking for."
+        department_name = command.split("department")[-1].strip()  # Extract department name from command
+        department_info = get_department_info(department_name)
+        if 'error' in department_info:
+            return f"Sorry, I couldn't find information for the department {department_name}."
+        else:
+            return f"Here's the information for the {department_name} department: {department_info}"
+    
     elif any(word in command for word in ["faculty", "professor", "teacher"]):
-        return "I will provide details about the faculty."
-    elif "principal" in command:
-        return "The principal's office is in Block A."
-    elif any(word in command for word in ["library", "libra"]):
-        return "The library is on the second floor."
+        faculty_name = command.split("faculty")[-1].strip()  # Extract faculty name from command
+        faculty_info = get_faculty_info(faculty_name)
+        if 'error' in faculty_info:
+            return f"Sorry, I couldn't find information for the faculty member {faculty_name}."
+        else:
+            return f"Here's the information for the faculty member {faculty_name}: {faculty_info}"
+    
     elif "event" in command:
-        return "The next event is scheduled for March 2024."
-    elif doc.ents and any(ent.label_ == "PERSON" for ent in doc.ents):
-        return f"I will find information about {doc.ents[0].text}."
-    elif TextBlob(command).sentiment.polarity < 0:
-        return "I'm here to help. How can I assist you further?"
+        event_name = command.split("event")[-1].strip()  # Extract event name from command
+        event_info = get_event_info(event_name)
+        if 'error' in event_info:
+            return "Sorry, I couldn't find information about the event."
+        else:
+            return f"Here's the information for the event: {event_info}"
+    
     else:
         return "I'm not sure about that. Let me check."
 
@@ -77,4 +115,3 @@ with sr.Microphone() as source:
     except sr.RequestError:
         print("Could not request results from Google Speech Recognition.")
         speak_text("There seems to be an issue with the internet connection.")
-
