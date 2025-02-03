@@ -8,6 +8,19 @@ app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/voice_assistant"
 mongo = PyMongo(app)
 
+# Define Faculty Mapping
+faculty_mapping = {
+    "rajesh": "CSE_FAC001",
+    "geeta": "CSE_FAC002",
+    "yerriswamy": "CSE_FAC003",
+    "gopal": "ECE_FAC001",
+    "manu": "ECE_FAC002",
+    "rajeshwari": "ECE_FAC003",
+    "sharanabasappa": "ME_FAC001",
+    "anand": "ME_FAC002",
+    "veerabhadrayya": "ME_FAC003"
+}
+
 # Home route
 @app.route('/')
 def home():
@@ -16,11 +29,24 @@ def home():
 # ---------------------------------------
 # Routes for `events` collection
 # ---------------------------------------
+
 @app.route('/add-event', methods=['POST'])
 def add_event():
     new_event = request.json
     mongo.db.events.insert_one(new_event)
     return jsonify({"message": "Event added successfully!"})
+
+@app.route('/events/<string:department_name>', methods=['GET'])
+def get_event_info(department_name):
+    """Fetch event info based only on department name."""
+    # Perform a case-insensitive search for events based on the department name
+    event = mongo.db.events.find_one({"department": {"$regex": department_name, "$options": "i"}})
+    
+    if event:
+        event['_id'] = str(event['_id'])  # Convert ObjectId to string if necessary
+        return jsonify(event)
+    else:
+        return jsonify({"error": "Event not found for this department"}), 404
 
 # ---------------------------------------
 # Routes for `faculty` collection
@@ -28,7 +54,6 @@ def add_event():
 
 @app.route('/faculty/<string:faculty_id>', methods=['GET'])
 def get_faculty_by_id(faculty_id):
-    """Fetch faculty info using faculty_id."""
     faculty = mongo.db.faculty.find_one({"_id": faculty_id})  # Query by _id
     if faculty:
         faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if needed
