@@ -31,10 +31,19 @@ def speak_text(text):
     engine.runAndWait()
 
 def extract_entities(command):
-    """Extract key entities from the command."""
+    """Extract faculty, department, and event names from the command."""
     doc = nlp(command)
-    entities = [ent.text for ent in doc.ents if ent.label_ in ["ORG", "GPE"]]  # Entities like organization or geographical locations
-    return entities
+    
+    faculty_names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]  # Extract faculty names
+    department_names = [word for word in department_mapping.keys() if word in command.lower()]  # Extract departments
+    event_names = [ent.text for ent in doc.ents if ent.label_ in ["EVENT"]]  # Extract events
+
+    return {
+        "faculty": faculty_names,
+        "department": department_names,
+        "event": event_names
+    }
+
 
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
@@ -56,18 +65,37 @@ def get_department_info(department_name):
         print(f"Error: {response.status_code}")  # Log the error code
         return {"error": "Department not found"}
 
-def get_faculty_info(faculty_name):
-    """Fetch faculty info from the Flask backend using name instead of _id."""
-    formatted_name = faculty_name.strip()  # Ensure no spaces at the start or end
-    url = f"http://localhost:5000/faculty/{formatted_name}"
-    
-    print(f"Requesting faculty URL: {url}")  # Debug log
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        return response.json()
+def interpret_command(command):
+    """Interpret user command and return appropriate response."""
+    command = command.lower()
+
+    # Extract entities
+    entities = extract_entities(command)
+
+    # Check for department queries
+    if entities["department"]:
+        department_name = entities["department"][0]  # First detected department
+        print(f"Looking up department: {department_name}")
+        department_info = get_department_info(department_name)
+        return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
+
+    # Check for faculty queries
+    elif entities["faculty"]:
+        faculty_name = entities["faculty"][0]  # First detected faculty
+        print(f"Looking up faculty: {faculty_name}")
+        faculty_info = get_faculty_info(faculty_name)
+        return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
+
+    # Check for event queries
+    elif entities["event"]:
+        event_name = entities["event"][0]  # First detected event
+        print(f"Looking up event: {event_name}")
+        event_info = get_event_info(event_name)
+        return f"Here's the event information: {event_info}" if 'error' not in event_info else "Sorry, I couldn't find details for the event."
+
     else:
-        return {"error": "Faculty not found"}
+        return "I'm not sure about that. Let me check."
+
 
 
 def get_event_info(department_name):
@@ -83,37 +111,29 @@ def interpret_command(command):
     """Interpret user command and return appropriate response."""
     command = command.lower()
 
-    # Try to match the department names with the command
-    department_name = None
-    for dept in department_mapping.keys():
-        if dept in command:
-            department_name = dept
-            break
+    # Extract entities
+    entities = extract_entities(command)
 
-    if department_name:
-        print(f"Looking up department: {department_name}")  # Log the department name
+    # Check for department queries
+    if entities["department"]:
+        department_name = entities["department"][0]  # First detected department
+        print(f"Looking up department: {department_name}")
         department_info = get_department_info(department_name)
-        if 'error' in department_info:
-            return f"Sorry, I couldn't find information for the {department_name} department."
-        else:
-            return f"Here's the information for the {department_name} department: {department_info}"
+        return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
 
-    # Handle other cases (faculty, events)
-    elif any(word in command for word in ["faculty", "professor", "teacher"]):
-        faculty_name = command.replace("faculty", "").strip()  # Extract faculty name by removing the word "faculty"
+    # Check for faculty queries
+    elif entities["faculty"]:
+        faculty_name = entities["faculty"][0]  # First detected faculty
+        print(f"Looking up faculty: {faculty_name}")
         faculty_info = get_faculty_info(faculty_name)
-        if 'error' in faculty_info:
-            return f"Sorry, I couldn't find information for the faculty member {faculty_name}."
-        else:
-            return f"Here's the information for the faculty member {faculty_name}: {faculty_info}"
+        return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
 
-    elif "event" in command:
-        department_name = command.replace("event", "").strip()  # Extract department name for events
-        event_info = get_event_info(department_name)
-        if 'error' in event_info:
-            return "Sorry, I couldn't find information about the event."
-        else:
-            return f"Here's the information for the event: {event_info}"
+    # Check for event queries
+    elif entities["event"]:
+        event_name = entities["event"][0]  # First detected event
+        print(f"Looking up event: {event_name}")
+        event_info = get_event_info(event_name)
+        return f"Here's the event information: {event_info}" if 'error' not in event_info else "Sorry, I couldn't find details for the event."
 
     else:
         return "I'm not sure about that. Let me check."
