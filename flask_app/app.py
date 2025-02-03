@@ -28,6 +28,7 @@ def add_event():
 
 @app.route('/faculty/<string:faculty_id>', methods=['GET'])
 def get_faculty_by_id(faculty_id):
+    """Fetch faculty info using faculty_id."""
     faculty = mongo.db.faculty.find_one({"_id": faculty_id})  # Query by _id
     if faculty:
         faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if needed
@@ -60,6 +61,26 @@ def add_department():
     new_department = request.json
     mongo.db.department.insert_one(new_department)
     return jsonify({"message": "Department added successfully!"})
+
+# ---------------------------------------
+# Route for Faculty by Name Lookup (via Mapping)
+# ---------------------------------------
+
+@app.route('/faculty-name/<string:faculty_name>', methods=['GET'])
+def get_faculty_by_name(faculty_name):
+    """Look up faculty member by name (using faculty_mapping)."""
+    # Use the faculty_mapping to get faculty_id by name
+    faculty_id = faculty_mapping.get(faculty_name.lower())
+    
+    if faculty_id:
+        faculty = mongo.db.faculty.find_one({"_id": faculty_id})
+        if faculty:
+            faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if necessary
+            return jsonify(faculty)
+        else:
+            return jsonify({"error": "Faculty member not found"}), 404
+    else:
+        return jsonify({"error": f"Faculty {faculty_name} not found in mapping"}), 404
 
 # Run the app
 if __name__ == "__main__":
