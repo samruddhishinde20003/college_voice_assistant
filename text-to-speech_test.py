@@ -77,20 +77,23 @@ def get_department_info(department_name):
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    """Fetch faculty info using faculty_mapping to match _id."""
     faculty_name = faculty_name.lower().strip()  # Normalize input
     
-    # Look for a match in faculty_mapping
-    faculty_id = faculty_mapping.get(faculty_name)
-    if faculty_id:
-        url = f"http://localhost:5000/faculty/{faculty_id}"
-        print(f"Requesting faculty URL: {url}")
+    # Remove common prefixes like "Dr." or "Prof." if present
+    faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").strip()
 
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {"error": "Faculty not found"}
+    # Look for a match in faculty_mapping (even partial match)
+    for key in faculty_mapping.keys():
+        if key in faculty_name:
+            faculty_id = faculty_mapping[key]
+            url = f"http://localhost:5000/faculty/{faculty_id}"
+            print(f"Requesting faculty URL: {url}")
+
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": "Faculty not found"}
     
     return {"error": f"Faculty {faculty_name} not found"}
 
