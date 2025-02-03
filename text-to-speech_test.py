@@ -79,8 +79,8 @@ def get_department_info(department_name):
 def get_faculty_info(faculty_name):
     faculty_name = faculty_name.lower().strip()  # Normalize input
     
-    # Remove common prefixes like "Dr." or "Prof." if present
-    faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").strip()
+    # Remove common prefixes and suffixes like "Dr.", "Prof.", "Mam", and "Sir"
+    faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").replace("mam", "").replace("sir", "").strip()
 
     # Look for a match in faculty_mapping (even partial match)
     for key in faculty_mapping.keys():
@@ -96,6 +96,7 @@ def get_faculty_info(faculty_name):
                 return {"error": "Faculty not found"}
     
     return {"error": f"Faculty {faculty_name} not found"}
+
 
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
