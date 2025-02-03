@@ -57,13 +57,18 @@ def get_department_info(department_name):
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    """Fetch faculty info from the Flask backend."""
-    url = f"http://localhost:5000/faculty/{faculty_name}"
+    """Fetch faculty info from the Flask backend using name instead of _id."""
+    formatted_name = faculty_name.strip()  # Ensure no spaces at the start or end
+    url = f"http://localhost:5000/faculty/{formatted_name}"
+    
+    print(f"Requesting faculty URL: {url}")  # Debug log
     response = requests.get(url)
+    
     if response.status_code == 200:
         return response.json()
     else:
         return {"error": "Faculty not found"}
+
 
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
