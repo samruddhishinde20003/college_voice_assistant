@@ -82,6 +82,8 @@ def get_faculty_info(faculty_name):
     # Remove common prefixes and suffixes like "Dr.", "Prof.", "Mam", and "Sir"
     faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").replace("mam", "").replace("sir", "").strip()
 
+    print(f"Normalized faculty name: {faculty_name}")  # Log the cleaned-up name
+
     # Look for a match in faculty_mapping (even partial match)
     for key in faculty_mapping.keys():
         if key in faculty_name:
