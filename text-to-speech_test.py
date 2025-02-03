@@ -48,7 +48,7 @@ def extract_entities(command):
 
     # Extract faculty names and remove "Dr." or "Prof." if present
     faculty_names = [ent.text.lower().replace("dr. ", "").replace("prof. ", "").strip()
-                     for ent in doc.ents if ent.label_ == "PERSON"]
+                    for ent in doc.ents if ent.label_ == "PERSON"]
     
     # Extract department names from predefined mapping
     department_names = [word for word in department_mapping.keys() if word in command.lower()]
