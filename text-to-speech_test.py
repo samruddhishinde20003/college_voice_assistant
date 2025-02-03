@@ -76,17 +76,29 @@ def get_department_info(department_name):
         print(f"Error: {response.status_code}")  
         return {"error": "Department not found"}
 
+import string
+
 def get_faculty_info(faculty_name):
+    # Normalize input and remove common prefixes like "Dr.", "Prof.", "Mam", and "Sir"
     faculty_name = faculty_name.lower().strip()  # Normalize input
-    
-    # Remove common prefixes and suffixes like "Dr.", "Prof.", "Mam", and "Sir"
     faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").replace("mam", "").replace("sir", "").strip()
+    
+    # Remove any punctuation from the faculty name
+    faculty_name = faculty_name.translate(str.maketrans("", "", string.punctuation))
+    
+    print(f"Normalized faculty name (without punctuation): {faculty_name}")  # Log the cleaned-up name
 
-    print(f"Normalized faculty name: {faculty_name}")  # Log the cleaned-up name
-
-    # Look for a match in faculty_mapping (even partial match)
+    # Look for a match in faculty_mapping (using substring matching)
     for key in faculty_mapping.keys():
-        if key in faculty_name:
+        # Clean the key by removing punctuation as well
+        key_cleaned = key.strip().lower()
+        key_cleaned = key_cleaned.translate(str.maketrans("", "", string.punctuation))
+
+        # Log the key being checked
+        print(f"Checking if '{key_cleaned}' is in '{faculty_name}'")
+
+        # Check if the key (faculty name) is a substring of the normalized faculty name
+        if key_cleaned in faculty_name:
             faculty_id = faculty_mapping[key]
             url = f"http://localhost:5000/faculty/{faculty_id}"
             print(f"Requesting faculty URL: {url}")
