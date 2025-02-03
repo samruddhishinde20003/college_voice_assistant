@@ -65,8 +65,10 @@ def get_department_info(department_name):
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    """Fetch faculty info from the Flask backend using case-insensitive search."""
-    formatted_name = faculty_name.strip()  
+    """Fetch faculty info from the Flask backend using case-insensitive partial name search."""
+    formatted_name = faculty_name.strip()
+    formatted_name = formatted_name.replace(".", "")  # Remove dots if user says "Dr."
+    
     url = f"http://localhost:5000/faculty/{formatted_name}"
     
     print(f"Requesting faculty URL: {url}")  
@@ -76,6 +78,7 @@ def get_faculty_info(faculty_name):
         return response.json()
     else:
         return {"error": "Faculty not found"}
+
 
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
