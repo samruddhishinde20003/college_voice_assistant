@@ -26,17 +26,14 @@ def add_event():
 # Routes for `faculty` collection
 # ---------------------------------------
 
-@app.route('/faculty/<string:faculty_name>', methods=['GET'])
-def get_faculty_by_name(faculty_name):
-    # Convert to lowercase and allow partial name search
-    faculty = mongo.db.faculty.find_one({"name": {"$regex": faculty_name, "$options": "i"}})
-
+@app.route('/faculty/<string:faculty_id>', methods=['GET'])
+def get_faculty_by_id(faculty_id):
+    faculty = mongo.db.faculty.find_one({"_id": faculty_id})  # Query by _id
     if faculty:
-        faculty['_id'] = str(faculty['_id'])  
+        faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if needed
         return jsonify(faculty)
     else:
         return jsonify({"error": "Faculty member not found"}), 404
-
 
 @app.route('/add-faculty', methods=['POST'])
 def add_faculty():
