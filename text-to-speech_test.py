@@ -34,20 +34,20 @@ def extract_entities(command):
     """Extract faculty, department, and event names from the command."""
     doc = nlp(command)
 
-    # Extract faculty names (PERSON entities)
-    faculty_names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
+    # Extract faculty names and remove "Dr." or "Prof." if present
+    faculty_names = [ent.text.replace("Dr. ", "").replace("Prof. ", "").strip() for ent in doc.ents if ent.label_ == "PERSON"]
 
     # Extract department names from predefined mapping
     department_names = [word for word in department_mapping.keys() if word in command.lower()]
 
-    # Placeholder for events (Modify if event names exist in DB)
-    event_names = []
+    event_names = []  # Placeholder for future event extraction
 
     return {
         "faculty": faculty_names,
         "department": department_names,
         "event": event_names
     }
+
 
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
