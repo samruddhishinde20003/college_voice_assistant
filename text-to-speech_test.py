@@ -33,10 +33,15 @@ def speak_text(text):
 def extract_entities(command):
     """Extract faculty, department, and event names from the command."""
     doc = nlp(command)
-    
-    faculty_names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]  # Extract faculty names
-    department_names = [word for word in department_mapping.keys() if word in command.lower()]  # Extract departments
-    event_names = [ent.text for ent in doc.ents if ent.label_ in ["EVENT"]]  # Extract events
+
+    # Extract faculty names (PERSON entities)
+    faculty_names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
+
+    # Extract department names from predefined mapping
+    department_names = [word for word in department_mapping.keys() if word in command.lower()]
+
+    # Placeholder for events (Modify if event names exist in DB)
+    event_names = []
 
     return {
         "faculty": faculty_names,
@@ -44,46 +49,39 @@ def extract_entities(command):
         "event": event_names
     }
 
-
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
-    # Get the abbreviated department name from the mapping
-    department_abbr = department_mapping.get(department_name.lower(), None)
-    if department_abbr:
-        url = f"http://localhost:5000/departments/{department_abbr}"
-    else:
-        # If no abbreviation was found, directly use the original input
-        department_abbr = department_name.upper()  # Default to uppercase
-        url = f"http://localhost:5000/departments/{department_abbr}"
+    department_abbr = department_mapping.get(department_name.lower(), department_name.upper())
+    url = f"http://localhost:5000/departments/{department_abbr}"
 
-    print(f"Requesting URL: {url}")  # Log the URL being requested
+    print(f"Requesting URL: {url}")  
     response = requests.get(url)
+    
     if response.status_code == 200:
-        print(f"Response: {response.json()}")  # Log the successful response
+        print(f"Response: {response.json()}")  
         return response.json()
     else:
-        print(f"Error: {response.status_code}")  # Log the error code
+        print(f"Error: {response.status_code}")  
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    """Fetch faculty info from the Flask backend using name."""
-    formatted_name = faculty_name.strip()  # Remove leading/trailing spaces
+    """Fetch faculty info from the Flask backend using case-insensitive search."""
+    formatted_name = faculty_name.strip()  
     url = f"http://localhost:5000/faculty/{formatted_name}"
     
-    print(f"Requesting faculty URL: {url}")  # Debug log
+    print(f"Requesting faculty URL: {url}")  
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         return response.json()
     else:
         return {"error": "Faculty not found"}
 
-
-
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
     url = f"http://localhost:5000/events/{department_name}"
     response = requests.get(url)
+    
     if response.status_code == 200:
         return response.json()
     else:
@@ -92,27 +90,25 @@ def get_event_info(department_name):
 def interpret_command(command):
     """Interpret user command and return appropriate response."""
     command = command.lower()
-
-    # Extract entities
     entities = extract_entities(command)
 
-    # Check for department queries
+    # Department Queries
     if entities["department"]:
-        department_name = entities["department"][0]  # First detected department
+        department_name = entities["department"][0]  
         print(f"Looking up department: {department_name}")
         department_info = get_department_info(department_name)
         return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
 
-    # Check for faculty queries
+    # Faculty Queries
     elif entities["faculty"]:
-        faculty_name = entities["faculty"][0]  # First detected faculty
+        faculty_name = " ".join(entities["faculty"])  # Get full faculty name
         print(f"Looking up faculty: {faculty_name}")
         faculty_info = get_faculty_info(faculty_name)
         return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
 
-    # Check for event queries
+    # Event Queries
     elif entities["event"]:
-        event_name = entities["event"][0]  # First detected event
+        event_name = entities["event"][0]  
         print(f"Looking up event: {event_name}")
         event_info = get_event_info(event_name)
         return f"Here's the event information: {event_info}" if 'error' not in event_info else "Sorry, I couldn't find details for the event."
@@ -120,27 +116,40 @@ def interpret_command(command):
     else:
         return "I'm not sure about that. Let me check."
 
-# Start voice recognition
-with sr.Microphone() as source:
-    print("Adjusting for ambient noise... Please wait.")
-    recognizer.adjust_for_ambient_noise(source, duration=2)
-    print("Listening... Speak something!")
+# 🔹 **Allow User to Input Text or Speak**
+def get_user_input():
+    """Allow user to either enter text manually or use voice input."""
+    choice = input("Type '1' for text input or '2' for voice input: ").strip()
+    
+    if choice == '1':
+        command = input("Enter your query: ")
+    else:
+        with sr.Microphone() as source:
+            print("Adjusting for ambient noise... Please wait.")
+            recognizer.adjust_for_ambient_noise(source, duration=2)
+            print("Listening... Speak something!")
 
-    try:
-        # Listen and process audio
-        audio = recognizer.listen(source)
-        print("Recognizing...")
-        command = recognizer.recognize_google(audio)
-        print(f"You said: {command}")
+            try:
+                audio = recognizer.listen(source)
+                print("Recognizing...")
+                command = recognizer.recognize_google(audio)
+                print(f"You said: {command}")
 
-        # Respond with NLP
+            except sr.UnknownValueError:
+                print("Sorry, I couldn't understand the audio.")
+                speak_text("Sorry, I couldn't understand what you said.")
+                return None
+            except sr.RequestError:
+                print("Could not request results from Google Speech Recognition.")
+                speak_text("There seems to be an issue with the internet connection.")
+                return None
+
+    return command
+
+# 🔹 **Main Program**
+if __name__ == "__main__":
+    command = get_user_input()
+    if command:
         response = interpret_command(command)
-        print(f"Response : {response}")
+        print(f"Response: {response}")
         speak_text(response)
-
-    except sr.UnknownValueError:
-        print("Sorry, I couldn't understand the audio.")
-        speak_text("Sorry, I couldn't understand what you said.")
-    except sr.RequestError:
-        print("Could not request results from Google Speech Recognition.")
-        speak_text("There seems to be an issue with the internet connection.")
