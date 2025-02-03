@@ -25,6 +25,18 @@ department_mapping = {
     'electrical and electronics': 'EEE'
 }
 
+faculty_mapping = {
+    "rajesh ": "CSE_FAC001",
+    "geeta ": "CSE_FAC002",
+    "yerriswamy ": "CSE_FAC003",
+    "gopal ": "ECE_FAC001",
+    "manu ": "ECE_FAC002",
+    "rajeshwari ": "ECE_FAC003",
+    "sharanabasappa ": "ME_FAC001",
+    "anand ": "ME_FAC002",
+    "veerabhadrayya ": "ME_FAC003"
+}
+
 def speak_text(text):
     """Convert text to speech."""
     engine.say(text)
@@ -65,20 +77,22 @@ def get_department_info(department_name):
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    """Fetch faculty info from the Flask backend using case-insensitive partial name search."""
-    formatted_name = faculty_name.strip()
-    formatted_name = formatted_name.replace(".", "")  # Remove dots if user says "Dr."
+    faculty_name = faculty_name.lower().strip()  # Normalize input
     
-    url = f"http://localhost:5000/faculty/{formatted_name}"
+    # Look for a match in faculty_mapping (even partial match)
+    for key in faculty_mapping.keys():
+        if key in faculty_name:
+            faculty_id = faculty_mapping[key]
+            url = f"http://localhost:5000/faculty/{faculty_id}"
+            print(f"Requesting faculty URL: {url}")
+
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": "Faculty not found"}
     
-    print(f"Requesting faculty URL: {url}")  
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": "Faculty not found"}
-
+    return {"error": f"Faculty {faculty_name} not found"}
 
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
