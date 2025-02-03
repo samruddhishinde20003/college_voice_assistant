@@ -2,14 +2,13 @@ import speech_recognition as sr
 import pyttsx3
 import spacy
 import requests
-from textblob import TextBlob
 
-# Initialize recognizer and TTS engine and NLP model
+# Initialize recognizer, TTS engine, and NLP model
 recognizer = sr.Recognizer()
 engine = pyttsx3.init()
 nlp = spacy.load("en_core_web_sm")
 
-# List of known departments and their mappings to abbreviations
+# ✅ Department mapping for consistent abbreviations
 department_mapping = {
     'cse': 'CSE', 
     'computer science': 'CSE', 
@@ -25,16 +24,17 @@ department_mapping = {
     'electrical and electronics': 'EEE'
 }
 
+# ✅ Faculty mapping for accurate retrieval
 faculty_mapping = {
-    "rajesh ": "CSE_FAC001",
-    "geeta ": "CSE_FAC002",
-    "yerriswamy ": "CSE_FAC003",
-    "gopal ": "ECE_FAC001",
-    "manu ": "ECE_FAC002",
-    "rajeshwari ": "ECE_FAC003",
-    "sharanabasappa ": "ME_FAC001",
-    "anand ": "ME_FAC002",
-    "veerabhadrayya ": "ME_FAC003"
+    "rajesh": "CSE_FAC001",
+    "geeta": "CSE_FAC002",
+    "yerriswamy": "CSE_FAC003",
+    "gopal": "ECE_FAC001",
+    "manu": "ECE_FAC002",
+    "rajeshwari": "ECE_FAC003",
+    "sharanabasappa": "ME_FAC001",
+    "anand": "ME_FAC002",
+    "veerabhadrayya": "ME_FAC003"
 }
 
 def speak_text(text):
@@ -47,8 +47,9 @@ def extract_entities(command):
     doc = nlp(command)
 
     # Extract faculty names and remove "Dr." or "Prof." if present
-    faculty_names = [ent.text.replace("Dr. ", "").replace("Prof. ", "").strip() for ent in doc.ents if ent.label_ == "PERSON"]
-
+    faculty_names = [ent.text.lower().replace("dr. ", "").replace("prof. ", "").strip()
+                     for ent in doc.ents if ent.label_ == "PERSON"]
+    
     # Extract department names from predefined mapping
     department_names = [word for word in department_mapping.keys() if word in command.lower()]
 
@@ -59,7 +60,6 @@ def extract_entities(command):
         "department": department_names,
         "event": event_names
     }
-
 
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
@@ -77,20 +77,20 @@ def get_department_info(department_name):
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
+    """Fetch faculty info using faculty_mapping to match _id."""
     faculty_name = faculty_name.lower().strip()  # Normalize input
     
-    # Look for a match in faculty_mapping (even partial match)
-    for key in faculty_mapping.keys():
-        if key in faculty_name:
-            faculty_id = faculty_mapping[key]
-            url = f"http://localhost:5000/faculty/{faculty_id}"
-            print(f"Requesting faculty URL: {url}")
+    # Look for a match in faculty_mapping
+    faculty_id = faculty_mapping.get(faculty_name)
+    if faculty_id:
+        url = f"http://localhost:5000/faculty/{faculty_id}"
+        print(f"Requesting faculty URL: {url}")
 
-            response = requests.get(url)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"error": "Faculty not found"}
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Faculty not found"}
     
     return {"error": f"Faculty {faculty_name} not found"}
 
@@ -109,21 +109,21 @@ def interpret_command(command):
     command = command.lower()
     entities = extract_entities(command)
 
-    # Department Queries
+    # ✅ Department Queries
     if entities["department"]:
         department_name = entities["department"][0]  
         print(f"Looking up department: {department_name}")
         department_info = get_department_info(department_name)
         return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
 
-    # Faculty Queries
+    # ✅ Faculty Queries
     elif entities["faculty"]:
         faculty_name = " ".join(entities["faculty"])  # Get full faculty name
         print(f"Looking up faculty: {faculty_name}")
         faculty_info = get_faculty_info(faculty_name)
         return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
 
-    # Event Queries
+    # ✅ Event Queries
     elif entities["event"]:
         event_name = entities["event"][0]  
         print(f"Looking up event: {event_name}")
@@ -139,7 +139,8 @@ def get_user_input():
     choice = input("Type '1' for text input or '2' for voice input: ").strip()
     
     if choice == '1':
-        command = input("Enter your query: ")
+        return input("Enter your query: ").strip()
+
     else:
         with sr.Microphone() as source:
             print("Adjusting for ambient noise... Please wait.")
@@ -151,6 +152,7 @@ def get_user_input():
                 print("Recognizing...")
                 command = recognizer.recognize_google(audio)
                 print(f"You said: {command}")
+                return command
 
             except sr.UnknownValueError:
                 print("Sorry, I couldn't understand the audio.")
@@ -160,8 +162,6 @@ def get_user_input():
                 print("Could not request results from Google Speech Recognition.")
                 speak_text("There seems to be an issue with the internet connection.")
                 return None
-
-    return command
 
 # 🔹 **Main Program**
 if __name__ == "__main__":
