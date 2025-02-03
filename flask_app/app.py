@@ -28,21 +28,14 @@ def add_event():
 
 @app.route('/faculty/<string:faculty_name>', methods=['GET'])
 def get_faculty_by_name(faculty_name):
-    """Fetch faculty info by name."""
-    # Perform case-insensitive search for the faculty name
-    faculty_members = mongo.db.faculty.find({
-        "name": {"$regex": faculty_name, "$options": "i"}  # Case-insensitive search
-    })
-    
-    faculty_list = []
-    for faculty in faculty_members:
-        faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if necessary
-        faculty_list.append(faculty)
+    # Search in the database using "name" instead of "_id"
+    faculty = mongo.db.faculty.find_one({"name": {"$regex": f"^{faculty_name}$", "$options": "i"}})  # Case-insensitive match
 
-    if faculty_list:
-        return jsonify(faculty_list)
+    if faculty:
+        faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string
+        return jsonify(faculty)
     else:
-        return jsonify({"error": f"Faculty {faculty_name} not found"}), 404
+        return jsonify({"error": "Faculty member not found"}), 404
 
 @app.route('/add-faculty', methods=['POST'])
 def add_faculty():
