@@ -79,19 +79,19 @@ def get_department_info(department_name):
 import string
 
 def get_faculty_info(faculty_name):
-    # Normalize input and remove common prefixes like "Dr.", "Prof.", "Mam", and "Sir"
+    # Normalize input: Remove common prefixes (like Dr., Prof., Mam, Sir)
     faculty_name = faculty_name.lower().strip()  # Normalize input
     faculty_name = faculty_name.replace("dr. ", "").replace("prof. ", "").replace("mam", "").replace("sir", "").strip()
     
-    # Remove any punctuation from the faculty name
+    # Remove any punctuation
     faculty_name = faculty_name.translate(str.maketrans("", "", string.punctuation))
-    
+
     print(f"Normalized faculty name (without punctuation): {faculty_name}")  # Log the cleaned-up name
 
     # Look for a match in faculty_mapping (using substring matching)
     for key in faculty_mapping.keys():
-        # Clean the key by removing punctuation as well
-        key_cleaned = key.strip().lower()
+        # Normalize the key (faculty name from the mapping)
+        key_cleaned = key.lower().strip().replace("dr. ", "").replace("prof. ", "").replace("mam", "").replace("sir", "").strip()
         key_cleaned = key_cleaned.translate(str.maketrans("", "", string.punctuation))
 
         # Log the key being checked
