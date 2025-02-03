@@ -4,11 +4,26 @@ import spacy
 import requests
 from textblob import TextBlob
 
-
 # Initialize recognizer and TTS engine and NLP model
 recognizer = sr.Recognizer()
 engine = pyttsx3.init()
 nlp = spacy.load("en_core_web_sm")
+
+# List of known departments and their mappings to abbreviations
+department_mapping = {
+    'cse': 'CSE', 
+    'computer science': 'CSE', 
+    'computer science and engineering': 'CSE',
+    'ece': 'ECE', 
+    'electronics and communication': 'ECE', 
+    'electronics and communication engineering': 'ECE',
+    'mechanical engineering': 'ME',
+    'civil': 'CV', 
+    'civil engineering': 'CV', 
+    'eee': 'EEE', 
+    'electrical and electronics engineering': 'EEE',
+    'electrical and electronics': 'EEE'
+}
 
 def speak_text(text):
     """Convert text to speech."""
@@ -18,21 +33,27 @@ def speak_text(text):
 def extract_entities(command):
     """Extract key entities from the command."""
     doc = nlp(command)
-    entities = [ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG", "GPE"]]  # Adjust to fit your needs
+    entities = [ent.text for ent in doc.ents if ent.label_ in ["ORG", "GPE"]]  # Entities like organization or geographical locations
     return entities
-
-def analyze_sentiment(command):
-    """Analyze the sentiment of the command(optional)."""
-    blob = TextBlob(command)
-    return blob.sentiment.polarity
 
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
-    url = f"http://localhost:5000/departments/{department_name}"
+    # Get the abbreviated department name from the mapping
+    department_abbr = department_mapping.get(department_name.lower(), None)
+    if department_abbr:
+        url = f"http://localhost:5000/departments/{department_abbr}"
+    else:
+        # If no abbreviation was found, directly use the original input
+        department_abbr = department_name.upper()  # Default to uppercase
+        url = f"http://localhost:5000/departments/{department_abbr}"
+
+    print(f"Requesting URL: {url}")  # Log the URL being requested
     response = requests.get(url)
     if response.status_code == 200:
+        print(f"Response: {response.json()}")  # Log the successful response
         return response.json()
     else:
+        print(f"Error: {response.status_code}")  # Log the error code
         return {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
@@ -44,52 +65,53 @@ def get_faculty_info(faculty_name):
     else:
         return {"error": "Faculty not found"}
 
-def get_event_info(event_name):
+def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
-    url = f"http://localhost:5000/events/{event_name}"
+    url = f"http://localhost:5000/events/{department_name}"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
     else:
-        return {"error": "Event not found"}
+        return {"error": "No events found for this department"}
 
 def interpret_command(command):
     """Interpret user command and return appropriate response."""
     command = command.lower()
-    
-    if "department" in command:
-        department_name = command.split("department")[-1].strip()  # Extract department name from command
+
+    # Try to match the department names with the command
+    department_name = None
+    for dept in department_mapping.keys():
+        if dept in command:
+            department_name = dept
+            break
+
+    if department_name:
+        print(f"Looking up department: {department_name}")  # Log the department name
         department_info = get_department_info(department_name)
         if 'error' in department_info:
-            return f"Sorry, I couldn't find information for the department {department_name}."
+            return f"Sorry, I couldn't find information for the {department_name} department."
         else:
             return f"Here's the information for the {department_name} department: {department_info}"
-    
+
+    # Handle other cases (faculty, events)
     elif any(word in command for word in ["faculty", "professor", "teacher"]):
-        faculty_name = command.split("faculty")[-1].strip()  # Extract faculty name from command
+        faculty_name = command.replace("faculty", "").strip()  # Extract faculty name by removing the word "faculty"
         faculty_info = get_faculty_info(faculty_name)
         if 'error' in faculty_info:
             return f"Sorry, I couldn't find information for the faculty member {faculty_name}."
         else:
             return f"Here's the information for the faculty member {faculty_name}: {faculty_info}"
-    
+
     elif "event" in command:
-        event_name = command.split("event")[-1].strip()  # Extract event name from command
-        event_info = get_event_info(event_name)
+        department_name = command.replace("event", "").strip()  # Extract department name for events
+        event_info = get_event_info(department_name)
         if 'error' in event_info:
             return "Sorry, I couldn't find information about the event."
         else:
             return f"Here's the information for the event: {event_info}"
-    
+
     else:
         return "I'm not sure about that. Let me check."
-
-
-def test_commands(command_list):
-    for command in command_list:
-        print(f"User Command: {command}")
-        response = interpret_command(command)
-        print(f"Response: {response}\n")
 
 # Start voice recognition
 with sr.Microphone() as source:

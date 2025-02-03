@@ -16,15 +16,6 @@ def home():
 # ---------------------------------------
 # Routes for `events` collection
 # ---------------------------------------
-@app.route('/events', methods=['GET'])
-def get_events():
-    events = mongo.db.events.find()
-    event_list = []
-    for event in events:
-        event['_id'] = str(event['_id'])  # Convert ObjectId to string
-        event_list.append(event)
-    return jsonify(event_list)
-
 @app.route('/add-event', methods=['POST'])
 def add_event():
     new_event = request.json
@@ -34,14 +25,24 @@ def add_event():
 # ---------------------------------------
 # Routes for `faculty` collection
 # ---------------------------------------
-@app.route('/faculty', methods=['GET'])
-def get_faculty():
-    faculty_members = mongo.db.faculty.find()
+
+@app.route('/faculty/<string:faculty_name>', methods=['GET'])
+def get_faculty_by_name(faculty_name):
+    """Fetch faculty info by name."""
+    # Perform case-insensitive search for the faculty name
+    faculty_members = mongo.db.faculty.find({
+        "name": {"$regex": faculty_name, "$options": "i"}  # Case-insensitive search
+    })
+    
     faculty_list = []
     for faculty in faculty_members:
-        faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string
+        faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string if necessary
         faculty_list.append(faculty)
-    return jsonify(faculty_list)
+
+    if faculty_list:
+        return jsonify(faculty_list)
+    else:
+        return jsonify({"error": f"Faculty {faculty_name} not found"}), 404
 
 @app.route('/add-faculty', methods=['POST'])
 def add_faculty():
@@ -52,14 +53,16 @@ def add_faculty():
 # ---------------------------------------
 # Routes for `department` collection
 # ---------------------------------------
-@app.route('/departments', methods=['GET'])
-def get_departments():
-    departments = mongo.db.department.find()
-    department_list = []
-    for department in departments:
-        department['_id'] = str(department['_id'])  # Convert ObjectId to string
-        department_list.append(department)
-    return jsonify(department_list)
+
+@app.route('/departments/<string:dept_id>', methods=['GET'])
+def get_department_by_id(dept_id):
+    """Fetch department info by id."""
+    department = mongo.db.department.find_one({"_id": dept_id.upper()})  # Convert dept_id to uppercase for case insensitivity
+    if department:
+        department['_id'] = str(department['_id'])  # Convert ObjectId to string if necessary
+        return jsonify(department)
+    else:
+        return jsonify({"error": f"Department {dept_id} not found"}), 404
 
 @app.route('/add-department', methods=['POST'])
 def add_department():
@@ -69,4 +72,4 @@ def add_department():
 
 # Run the app
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
