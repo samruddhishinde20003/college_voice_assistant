@@ -65,36 +65,18 @@ def get_department_info(department_name):
         print(f"Error: {response.status_code}")  # Log the error code
         return {"error": "Department not found"}
 
-def interpret_command(command):
-    """Interpret user command and return appropriate response."""
-    command = command.lower()
-
-    # Extract entities
-    entities = extract_entities(command)
-
-    # Check for department queries
-    if entities["department"]:
-        department_name = entities["department"][0]  # First detected department
-        print(f"Looking up department: {department_name}")
-        department_info = get_department_info(department_name)
-        return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
-
-    # Check for faculty queries
-    elif entities["faculty"]:
-        faculty_name = entities["faculty"][0]  # First detected faculty
-        print(f"Looking up faculty: {faculty_name}")
-        faculty_info = get_faculty_info(faculty_name)
-        return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
-
-    # Check for event queries
-    elif entities["event"]:
-        event_name = entities["event"][0]  # First detected event
-        print(f"Looking up event: {event_name}")
-        event_info = get_event_info(event_name)
-        return f"Here's the event information: {event_info}" if 'error' not in event_info else "Sorry, I couldn't find details for the event."
-
+def get_faculty_info(faculty_name):
+    """Fetch faculty info from the Flask backend using name."""
+    formatted_name = faculty_name.strip()  # Remove leading/trailing spaces
+    url = f"http://localhost:5000/faculty/{formatted_name}"
+    
+    print(f"Requesting faculty URL: {url}")  # Debug log
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return response.json()
     else:
-        return "I'm not sure about that. Let me check."
+        return {"error": "Faculty not found"}
 
 
 
