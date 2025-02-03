@@ -28,8 +28,8 @@ def add_event():
 
 @app.route('/faculty/<string:faculty_name>', methods=['GET'])
 def get_faculty_by_name(faculty_name):
-    # Search in the database using "name" instead of "_id"
-    faculty = mongo.db.faculty.find_one({"name": {"$regex": f"^{faculty_name}$", "$options": "i"}})  # Case-insensitive match
+    # Use case-insensitive regex to match full faculty names
+    faculty = mongo.db.faculty.find_one({"name": {"$regex": f"^{faculty_name}$", "$options": "i"}})
 
     if faculty:
         faculty['_id'] = str(faculty['_id'])  # Convert ObjectId to string
