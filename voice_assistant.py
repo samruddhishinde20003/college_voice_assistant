@@ -2,6 +2,7 @@ import speech_recognition as sr
 import pyttsx3
 import spacy
 import requests
+import eel
 
 # Initialize recognizer, TTS engine, and NLP model
 recognizer = sr.Recognizer()
@@ -94,43 +95,43 @@ def get_event_info(department_name):
 def format_faculty_info(faculty_info):
     if "error" in faculty_info:
         return "Sorry, I couldn't find information for that faculty member."
-    output = f"📌 **Faculty Details:**\n"
-    output += f"👤 **Name:** {faculty_info.get('name', 'N/A')}\n"
-    output += f"🎓 **Designation:** {faculty_info.get('designation', 'N/A')}\n"
-    output += f"🏢 **Department:** {faculty_info.get('department', 'N/A')}\n"
+    output = f"📌 *Faculty Details:*\n"
+    output += f"👤 *Name:* {faculty_info.get('name', 'N/A')}\n"
+    output += f"🎓 *Designation:* {faculty_info.get('designation', 'N/A')}\n"
+    output += f"🏢 *Department:* {faculty_info.get('department', 'N/A')}\n"
     specializations = ", ".join(faculty_info.get("specialization", []))
-    output += f"📚 **Specialization:** {specializations if specializations else 'N/A'}\n"
-    output += f"📞 **Contact:** {faculty_info.get('contact', 'N/A')}\n"
-    output += f"📧 **Email:** {faculty_info.get('email', 'N/A')}\n"
+    output += f"📚 *Specialization:* {specializations if specializations else 'N/A'}\n"
+    output += f"📞 *Contact:* {faculty_info.get('contact', 'N/A')}\n"
+    output += f"📧 *Email:* {faculty_info.get('email', 'N/A')}\n"
     if faculty_info.get("profile_link"):
-        output += f"🔗 **Profile:** [Click here]({faculty_info['profile_link']})\n"
+        output += f"🔗 *Profile:* [Click here]({faculty_info['profile_link']})\n"
     return output
 
 def format_department_info(department_info):
     if "error" in department_info:
         return "Sorry, I couldn't find information for that department."
-    output = f"🏛 **Department Information:**\n"
-    output += f"🏢 **Name:** {department_info.get('name', 'N/A')}\n"
-    output += f"📍 **Building:** {department_info.get('building', 'N/A')}\n"
-    output += f"📞 **Head of Department:** {department_info.get('head', 'N/A')}\n"
-    output += f"📧 **Email:** {department_info.get('email', 'N/A')}\n"
+    output = f"🏛 *Department Information:*\n"
+    output += f"🏢 *Name:* {department_info.get('name', 'N/A')}\n"
+    output += f"📍 *Building:* {department_info.get('building', 'N/A')}\n"
+    output += f"📞 *Head of Department:* {department_info.get('head', 'N/A')}\n"
+    output += f"📧 *Email:* {department_info.get('email', 'N/A')}\n"
     directions = department_info.get("directions", {})
     if "text" in directions:
-        output += f"🗺 **Directions:** {directions['text']}\n"
+        output += f"🗺 *Directions:* {directions['text']}\n"
     return output
 
 def format_event_info(events):
     if "error" in events:
         return "Sorry, no events found for this department."
-    output = "🎉 **Upcoming Events:**\n"
+    output = "🎉 *Upcoming Events:*\n"
     for event in events:
-        output += f"\n📅 **Event:** {event.get('title', 'N/A')}\n"
-        output += f"📖 **Description:** {event.get('description', 'N/A')}\n"
-        output += f"📍 **Venue:** {event.get('venue', 'N/A')}\n"
-        output += f"🕒 **Time:** {event.get('time', 'N/A')}\n"
-        output += f"📞 **Organizer:** {event.get('organizer', 'N/A')}\n"
+        output += f"\n📅 *Event:* {event.get('title', 'N/A')}\n"
+        output += f"📖 *Description:* {event.get('description', 'N/A')}\n"
+        output += f"📍 *Venue:* {event.get('venue', 'N/A')}\n"
+        output += f"🕒 *Time:* {event.get('time', 'N/A')}\n"
+        output += f"📞 *Organizer:* {event.get('organizer', 'N/A')}\n"
         if event.get("link"):
-            output += f"🔗 **More Info:** [Click here]({event['link']})\n"
+            output += f"🔗 *More Info:* [Click here]({event['link']})\n"
     return output
 
 def interpret_command(command):
@@ -145,7 +146,9 @@ def interpret_command(command):
         return format_faculty_info(get_faculty_info(" ".join(entities["faculty"])))
     return "🤖 I'm not sure about that. Let me check."
 
-# 🔹 **Allow User to Input Text or Speak**
+# 🔹 *Allow User to Input Text or Speak*
+
+@eel.expose
 def get_user_input():
     """Allow user to either enter text manually or use voice input."""
     choice = input("Type '1' for text input or '2' for voice input: ").strip()
@@ -167,7 +170,7 @@ def get_user_input():
                 return command
 
             except sr.UnknownValueError:
-                print("Sorry, I couldn't understand the audio.")
+                print("Sorry, I couldn't understand that.")
                 speak_text("Sorry, I couldn't understand what you said.")
                 return None
             except sr.RequestError:
@@ -175,10 +178,11 @@ def get_user_input():
                 speak_text("There seems to be an issue with the internet connection.")
                 return None
 
-# 🔹 **Main Program**
-if __name__ == "__main__":
+@eel.expose
+def main():
     command = get_user_input()
     if command:
         response = interpret_command(command)
         print(f"Response: {response}")
-        speak_text(response)
+        speak_text(response) # Will speak out the response
+        eel.display_response(response)  # Send the response to frontend

@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 
 # Create Flask app
-app = Flask(__name__)
+app = Flask(__name__)  # Use __name__ instead of _name_
 
 # MongoDB configuration
 app.config["MONGO_URI"] = "mongodb://localhost:27017/voice_assistant"
@@ -27,7 +27,7 @@ def home():
     return "Welcome to the Flask App connected to MongoDB!"
 
 # ---------------------------------------
-# Routes for `events` collection
+# Routes for events collection
 # ---------------------------------------
 
 @app.route('/add-event', methods=['POST'])
@@ -50,7 +50,7 @@ def get_event_info(department_name):
         return jsonify({"error": "No events found for this department"}), 404
 
 # ---------------------------------------
-# Routes for `faculty` collection
+# Routes for faculty collection
 # ---------------------------------------
 
 @app.route('/faculty/<string:faculty_id>', methods=['GET'])
@@ -69,7 +69,7 @@ def add_faculty():
     return jsonify({"message": "Faculty member added successfully!"})
 
 # ---------------------------------------
-# Routes for `department` collection
+# Routes for department collection
 # ---------------------------------------
 
 @app.route('/departments/<string:dept_id>', methods=['GET'])
@@ -124,5 +124,5 @@ def get_faculty_by_name(faculty_name):
     return jsonify({"error": f"Faculty {normalized_name} not found in mapping"}), 404
 
 # Run the app
-if __name__ == "__main__":
+if __name__ == "__main__":  # Correct this line
     app.run(debug=True, port=5000)
