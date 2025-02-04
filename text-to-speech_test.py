@@ -8,7 +8,7 @@ recognizer = sr.Recognizer()
 engine = pyttsx3.init()
 nlp = spacy.load("en_core_web_sm")
 
-# ✅ Department mapping for consistent abbreviations
+# Department mapping for consistent abbreviations
 department_mapping = {
     'cse': 'CSE', 
     'computer science': 'CSE', 
@@ -24,7 +24,7 @@ department_mapping = {
     'electrical and electronics': 'EEE'
 }
 
-# ✅ Faculty mapping for accurate retrieval
+# Faculty mapping for accurate retrieval
 faculty_mapping = {
     "rajesh": "CSE_FAC001",
     "geeta": "CSE_FAC002",
@@ -37,110 +37,113 @@ faculty_mapping = {
     "veerabhadrayya": "ME_FAC003"
 }
 
+import re
+
+def clean_text_for_speech(text):
+    """Remove emojis, markdown symbols, and links from the text before speaking."""
+    text = re.sub(r"[\U00010000-\U0010ffff]", "", text)  # Remove emojis
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # Remove bold markdown (**bold** → bold)
+    text = re.sub(r"\*(.*?)\*", r"\1", text)  # Remove italic markdown (*italic* → italic)
+    text = re.sub(r"\[.*?\]\((.*?)\)", "", text)  # Remove markdown links ([Click here](URL) → "")
+    return text.strip()
+
 def speak_text(text):
-    """Convert text to speech."""
-    engine.say(text)
+    """Convert text to speech after cleaning it for readability."""
+    cleaned_text = clean_text_for_speech(text)
+    engine.say(cleaned_text)
     engine.runAndWait()
+
 
 def extract_entities(command):
     """Extract faculty, department, and event names from the command."""
     doc = nlp(command)
-
-    # Extract faculty names and remove "Dr." or "Prof." if present
-    faculty_names = [ent.text.lower().replace("dr. ", "").replace("prof. ", "").strip()
-                    for ent in doc.ents if ent.label_ == "PERSON"]
-    
-    # Extract department names from predefined mapping
+    faculty_names = [
+        ent.text.lower().replace("dr.", "").replace("prof.", "").replace("mam", "").replace("sir", "").strip()
+        for ent in doc.ents if ent.label_ == "PERSON"
+    ]
+    for key in faculty_mapping.keys():
+        if key in command.lower():
+            faculty_names.append(key)
+    faculty_names = list(set(faculty_names))
     department_names = [word for word in department_mapping.keys() if word in command.lower()]
-
-    event_names = []  # Placeholder for future event extraction
-
-    return {
-        "faculty": faculty_names,
-        "department": department_names,
-        "event": event_names
-    }
+    return {"faculty": faculty_names, "department": department_names, "event": []}
 
 def get_department_info(department_name):
     """Fetch department info from the Flask backend."""
     department_abbr = department_mapping.get(department_name.lower(), department_name.upper())
     url = f"http://localhost:5000/departments/{department_abbr}"
-
-    print(f"Requesting URL: {url}")  
     response = requests.get(url)
-    
-    if response.status_code == 200:
-        print(f"Response: {response.json()}")  
-        return response.json()
-    else:
-        print(f"Error: {response.status_code}")  
-        return {"error": "Department not found"}
+    return response.json() if response.status_code == 200 else {"error": "Department not found"}
 
 def get_faculty_info(faculty_name):
-    # Normalize input and remove common prefixes like "Dr.", "Prof.", "Mam", and "Sir"
-    faculty_name = faculty_name.lower().strip()  # Normalize input
-    faculty_name = faculty_name.replace("dr ", "").replace("prof ", "").replace("mam", "").replace("sir", "").strip()
-
-    print(f"Normalized faculty name: {faculty_name}")  # Log the cleaned-up name
-
-    # Look for a match in faculty_mapping (using substring matching)
+    faculty_name = faculty_name.lower().replace("dr ", "").replace("prof ", "").replace("mam", "").replace("sir", "").replace(".", "").strip()
     for key in faculty_mapping.keys():
-        # Log the key being checked
-        print(f"Checking if '{key.strip().lower()}' is in '{faculty_name}'")
-
-        # Check if the key (faculty name) is a substring of the normalized faculty name
-        if key.strip().lower() in faculty_name:
+        if faculty_name in key.lower() or key.lower() in faculty_name:
             faculty_id = faculty_mapping[key]
             url = f"http://localhost:5000/faculty/{faculty_id}"
-            print(f"Requesting faculty URL: {url}")
-
             response = requests.get(url)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"error": "Faculty not found"}
-    
+            return response.json() if response.status_code == 200 else {"error": "Faculty not found"}
     return {"error": f"Faculty {faculty_name} not found"}
-
 
 def get_event_info(department_name):
     """Fetch event info from the Flask backend."""
     url = f"http://localhost:5000/events/{department_name}"
     response = requests.get(url)
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": "No events found for this department"}
+    return response.json() if response.status_code == 200 else {"error": "No events found for this department"}
+
+def format_faculty_info(faculty_info):
+    if "error" in faculty_info:
+        return "Sorry, I couldn't find information for that faculty member."
+    output = f"📌 **Faculty Details:**\n"
+    output += f"👤 **Name:** {faculty_info.get('name', 'N/A')}\n"
+    output += f"🎓 **Designation:** {faculty_info.get('designation', 'N/A')}\n"
+    output += f"🏢 **Department:** {faculty_info.get('department', 'N/A')}\n"
+    specializations = ", ".join(faculty_info.get("specialization", []))
+    output += f"📚 **Specialization:** {specializations if specializations else 'N/A'}\n"
+    output += f"📞 **Contact:** {faculty_info.get('contact', 'N/A')}\n"
+    output += f"📧 **Email:** {faculty_info.get('email', 'N/A')}\n"
+    if faculty_info.get("profile_link"):
+        output += f"🔗 **Profile:** [Click here]({faculty_info['profile_link']})\n"
+    return output
+
+def format_department_info(department_info):
+    if "error" in department_info:
+        return "Sorry, I couldn't find information for that department."
+    output = f"🏛 **Department Information:**\n"
+    output += f"🏢 **Name:** {department_info.get('name', 'N/A')}\n"
+    output += f"📍 **Building:** {department_info.get('building', 'N/A')}\n"
+    output += f"📞 **Head of Department:** {department_info.get('head', 'N/A')}\n"
+    output += f"📧 **Email:** {department_info.get('email', 'N/A')}\n"
+    directions = department_info.get("directions", {})
+    if "text" in directions:
+        output += f"🗺 **Directions:** {directions['text']}\n"
+    return output
+
+def format_event_info(events):
+    if "error" in events:
+        return "Sorry, no events found for this department."
+    output = "🎉 **Upcoming Events:**\n"
+    for event in events:
+        output += f"\n📅 **Event:** {event.get('title', 'N/A')}\n"
+        output += f"📖 **Description:** {event.get('description', 'N/A')}\n"
+        output += f"📍 **Venue:** {event.get('venue', 'N/A')}\n"
+        output += f"🕒 **Time:** {event.get('time', 'N/A')}\n"
+        output += f"📞 **Organizer:** {event.get('organizer', 'N/A')}\n"
+        if event.get("link"):
+            output += f"🔗 **More Info:** [Click here]({event['link']})\n"
+    return output
 
 def interpret_command(command):
-    """Interpret user command and return appropriate response."""
     command = command.lower()
     entities = extract_entities(command)
-
-    # ✅ Department Queries
+    if "event" in command or "events" in command:
+        if entities["department"]:
+            return format_event_info(get_event_info(entities["department"][0]))
     if entities["department"]:
-        department_name = entities["department"][0]  
-        print(f"Looking up department: {department_name}")
-        department_info = get_department_info(department_name)
-        return f"Here's the information for the {department_name} department: {department_info}" if 'error' not in department_info else f"Sorry, I couldn't find information for {department_name}."
-
-    # ✅ Faculty Queries
-    elif entities["faculty"]:
-        faculty_name = " ".join(entities["faculty"])  # Get full faculty name
-        print(f"Looking up faculty: {faculty_name}")
-        faculty_info = get_faculty_info(faculty_name)
-        return f"Here's the information for {faculty_name}: {faculty_info}" if 'error' not in faculty_info else f"Sorry, I couldn't find information for {faculty_name}."
-
-    # ✅ Event Queries
-    elif entities["event"]:
-        event_name = entities["event"][0]  
-        print(f"Looking up event: {event_name}")
-        event_info = get_event_info(event_name)
-        return f"Here's the event information: {event_info}" if 'error' not in event_info else "Sorry, I couldn't find details for the event."
-
-    else:
-        return "I'm not sure about that. Let me check."
+        return format_department_info(get_department_info(entities["department"][0]))
+    if entities["faculty"]:
+        return format_faculty_info(get_faculty_info(" ".join(entities["faculty"])))
+    return "🤖 I'm not sure about that. Let me check."
 
 # 🔹 **Allow User to Input Text or Speak**
 def get_user_input():
