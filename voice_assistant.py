@@ -135,54 +135,79 @@ def format_event_info(events):
     return output
 
 def interpret_command(command):
+    """Interpret user command and return structured response."""
     command = command.lower()
     entities = extract_entities(command)
+
     if "event" in command or "events" in command:
         if entities["department"]:
-            return format_event_info(get_event_info(entities["department"][0]))
+            department_name = entities["department"][0]
+            event_info = get_event_info(department_name)
+            response = format_event_info(event_info)
+            speak_text(response)  # ✅ Speak response
+            return response
+
     if entities["department"]:
-        return format_department_info(get_department_info(entities["department"][0]))
+        department_name = entities["department"][0]
+        department_info = get_department_info(department_name)
+        response = format_department_info(department_info)
+        speak_text(response)  # ✅ Speak response
+        return response
+
     if entities["faculty"]:
-        return format_faculty_info(get_faculty_info(" ".join(entities["faculty"])))
+        faculty_name = " ".join(entities["faculty"])
+        faculty_info = get_faculty_info(faculty_name)
+        response = format_faculty_info(faculty_info)
+        speak_text(response)  # ✅ Speak response
+        return response
+
+    speak_text("I'm not sure about that. Let me check.")
     return "🤖 I'm not sure about that. Let me check."
+
 
 # 🔹 *Allow User to Input Text or Speak*
 
 @eel.expose
-def get_user_input():
-    """Allow user to either enter text manually or use voice input."""
-    choice = input("Type '1' for text input or '2' for voice input: ").strip()
-    
-    if choice == '1':
-        return input("Enter your query: ").strip()
-
-    else:
-        with sr.Microphone() as source:
-            print("Adjusting for ambient noise... Please wait.")
-            recognizer.adjust_for_ambient_noise(source, duration=2)
-            print("Listening... Speak something!")
-
-            try:
-                audio = recognizer.listen(source)
-                print("Recognizing...")
-                command = recognizer.recognize_google(audio)
-                print(f"You said: {command}")
-                return command
-
-            except sr.UnknownValueError:
-                print("Sorry, I couldn't understand that.")
-                speak_text("Sorry, I couldn't understand what you said.")
-                return None
-            except sr.RequestError:
-                print("Could not request results from Google Speech Recognition.")
-                speak_text("There seems to be an issue with the internet connection.")
-                return None
+def process_text_input(user_input):
+    """Process text input from the frontend."""
+    response = interpret_command(user_input)
+    print(f"Response: {response}")
+    speak_text(response)
+    eel.display_response(response)  # Send response back to frontend
 
 @eel.expose
-def main():
-    command = get_user_input()
+def process_voice_input():
+    """Capture voice input and process it."""
+    try:
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=2)
+            print("Listening...")
+            audio = recognizer.listen(source)
+        
+        command = recognizer.recognize_google(audio)
+        print(f"You said: {command}")
+        
+        eel.display_response(f"You said: {command}")
+        response = interpret_command(command)
+        speak_text(response)
+        eel.display_response(response)  # Send response to frontend
+    except sr.UnknownValueError:
+        eel.display_response("Sorry, I couldn't understand that.")
+    except sr.RequestError:
+        eel.display_response("Couldn't reach the Google API.")
+
+
+@eel.expose
+def main(command):
+    """Process the command from the frontend and respond accordingly."""
     if command:
         response = interpret_command(command)
-        print(f"Response: {response}")
-        speak_text(response) # Will speak out the response
-        eel.display_response(response)  # Send the response to frontend
+        print(f"Response: {response}")  # Debugging
+        
+        eel.display_response(response)  # ✅ Send response to frontend
+        speak_text(response)  # ✅ Speak only once
+
+
+
+eel.init('Jarvis-main')
+eel.start('index.html', size=(800, 600), port=8001)

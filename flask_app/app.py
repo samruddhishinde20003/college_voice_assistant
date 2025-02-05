@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
+from flask_cors import CORS  # ✅ Import CORS
 
-# Create Flask app
-app = Flask(__name__)  # Use __name__ instead of _name_
+app = Flask(__name__)
+CORS(app)  # ✅ Enable CORS for all routes
 
 # MongoDB configuration
 app.config["MONGO_URI"] = "mongodb://localhost:27017/voice_assistant"
