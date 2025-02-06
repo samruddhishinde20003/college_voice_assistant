@@ -95,29 +95,29 @@ def get_event_info(department_name):
 def format_faculty_info(faculty_info):
     if "error" in faculty_info:
         return "Sorry, I couldn't find information for that faculty member."
-    output = f"📌 *Faculty Details:*\n"
-    output += f"👤 *Name:* {faculty_info.get('name', 'N/A')}\n"
-    output += f"🎓 *Designation:* {faculty_info.get('designation', 'N/A')}\n"
-    output += f"🏢 *Department:* {faculty_info.get('department', 'N/A')}\n"
+    output = f"📌 Faculty Details:\n"
+    output += f"👤 Name: {faculty_info.get('name', 'N/A')}\n"
+    output += f"🎓 Designation: {faculty_info.get('designation', 'N/A')}\n"
+    output += f"🏢 Department: {faculty_info.get('department', 'N/A')}\n"
     specializations = ", ".join(faculty_info.get("specialization", []))
-    output += f"📚 *Specialization:* {specializations if specializations else 'N/A'}\n"
-    output += f"📞 *Contact:* {faculty_info.get('contact', 'N/A')}\n"
-    output += f"📧 *Email:* {faculty_info.get('email', 'N/A')}\n"
+    output += f"📚 Specialization: {specializations if specializations else 'N/A'}\n"
+    output += f"📞 Contact: {faculty_info.get('contact', 'N/A')}\n"
+    output += f"📧 Email: {faculty_info.get('email', 'N/A')}\n"
     if faculty_info.get("profile_link"):
-        output += f"🔗 *Profile:* [Click here]({faculty_info['profile_link']})\n"
+        output += f"🔗 Profile: [Click here]({faculty_info['profile_link']})\n"
     return output
 
 def format_department_info(department_info):
     if "error" in department_info:
         return "Sorry, I couldn't find information for that department."
-    output = f"🏛 *Department Information:*\n"
-    output += f"🏢 *Name:* {department_info.get('name', 'N/A')}\n"
-    output += f"📍 *Building:* {department_info.get('building', 'N/A')}\n"
-    output += f"📞 *Head of Department:* {department_info.get('head', 'N/A')}\n"
-    output += f"📧 *Email:* {department_info.get('email', 'N/A')}\n"
+    output = f"🏛 Department Information:\n"
+    output += f"🏢 Name: {department_info.get('name', 'N/A')}\n"
+    output += f"📍 Building: {department_info.get('building', 'N/A')}\n"
+    output += f"📞 Head of Department: {department_info.get('head', 'N/A')}\n"
+    output += f"📧 Email: {department_info.get('email', 'N/A')}\n"
     directions = department_info.get("directions", {})
     if "text" in directions:
-        output += f"🗺 *Directions:* {directions['text']}\n"
+        output += f"🗺 Directions: {directions['text']}\n"
     return output
 
 def format_event_info(events):
@@ -125,13 +125,13 @@ def format_event_info(events):
         return "Sorry, no events found for this department."
     output = "🎉 *Upcoming Events:*\n"
     for event in events:
-        output += f"\n📅 *Event:* {event.get('title', 'N/A')}\n"
-        output += f"📖 *Description:* {event.get('description', 'N/A')}\n"
-        output += f"📍 *Venue:* {event.get('venue', 'N/A')}\n"
-        output += f"🕒 *Time:* {event.get('time', 'N/A')}\n"
-        output += f"📞 *Organizer:* {event.get('organizer', 'N/A')}\n"
+        output += f"\n📅 Event: {event.get('title', 'N/A')}\n"
+        output += f"📖 Description: {event.get('description', 'N/A')}\n"
+        output += f"📍 Venue: {event.get('venue', 'N/A')}\n"
+        output += f"🕒 Time: {event.get('time', 'N/A')}\n"
+        output += f"📞 Organizer: {event.get('organizer', 'N/A')}\n"
         if event.get("link"):
-            output += f"🔗 *More Info:* [Click here]({event['link']})\n"
+            output += f"🔗 More Info: [Click here]({event['link']})\n"
     return output
 
 def interpret_command(command):
@@ -144,24 +144,24 @@ def interpret_command(command):
             department_name = entities["department"][0]
             event_info = get_event_info(department_name)
             response = format_event_info(event_info)
-            speak_text(response)  # ✅ Speak response
+            #speak_text(response)  # ✅ Speak response
             return response
 
     if entities["department"]:
         department_name = entities["department"][0]
         department_info = get_department_info(department_name)
         response = format_department_info(department_info)
-        speak_text(response)  # ✅ Speak response
+        #speak_text(response)  # ✅ Speak response
         return response
 
     if entities["faculty"]:
         faculty_name = " ".join(entities["faculty"])
         faculty_info = get_faculty_info(faculty_name)
         response = format_faculty_info(faculty_info)
-        speak_text(response)  # ✅ Speak response
+        #speak_text(response)  # ✅ Speak response
         return response
 
-    speak_text("I'm not sure about that. Let me check.")
+    #speak_text("I'm not sure about that. Let me check.")
     return "🤖 I'm not sure about that. Let me check."
 
 
