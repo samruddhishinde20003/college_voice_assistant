@@ -12,10 +12,11 @@ function removeEmojis(text) {
 function speakResponse(message) {
     window.speechSynthesis.cancel();  // Stop any ongoing speech
 
+    if (message.startsWith("You said")) return;
     let cleanedMessage = removeEmojis(message);  // ✅ Ensure emojis are removed
     let speech = new SpeechSynthesisUtterance(cleanedMessage);
     
-    speech.rate = 0.9; // Adjust speed (default is 1.0)
+    speech.rate = 0.8; // Adjust speed (default is 1.0)
     
     window.speechSynthesis.speak(speech);
 }
@@ -86,6 +87,7 @@ function handleMicInput() {
 eel.expose(display_response);
 
 function display_response(message) {
+    
     updateResponse(message);
     speakResponse(message); // ✅ Speak only once
 }

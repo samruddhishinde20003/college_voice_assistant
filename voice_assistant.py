@@ -145,11 +145,28 @@ def format_event_info(events):
         if event.get("link"):
             output += f"🔗 More Info: [Click here]({event['link']})\n"
     return output
+from textblob import TextBlob  # ✅ Import TextBlob for sentiment analysis
 
+def analyze_sentiment(command):
+    """Analyze the sentiment of the user's input using TextBlob."""
+    sentiment = TextBlob(command).sentiment.polarity  # Get sentiment polarity (-1 to 1)
+    
+    if sentiment > 0.2:
+        return "😊 You seem happy! How can I assist you today?"
+    elif sentiment < -0.2:
+        return "😟 You sound a bit down. Is there anything I can help with?"
+    else:
+        return "Hello! How can I assist you?"
+    
 @eel.expose
 def interpret_command(command):
     """Interpret user command and return structured response."""
     command = command.lower()
+
+    # ✅ Handle greetings separately
+    if command in ["hello", "hi", "hey"]:
+        return analyze_sentiment(command)
+    
     entities = extract_entities(command)
 
     if "event" in command or "events" in command:
