@@ -4,27 +4,42 @@ eel.expose(displayResponse);
 
 // Function to send user input to Python backend
 function sendUserInput(userInput) {
+    console.log("Sending to Python:", userInput);
     eel.interpret_command(userInput)(function(response) {
+        console.log("Response from Python:", response);
         displayResponse(response);
     });
 }
 
+
 // Function to display assistant response in the UI
+function removeEmojis(text) {
+    return text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ""); // Remove Unicode emojis
+}
+
 function displayResponse(message) {
     const responseBox = document.getElementById("response-box");
 
-    // Prevent duplicate messages
-    if (responseBox.lastChild && responseBox.lastChild.textContent === message) {
+    let cleanedMessage = removeEmojis(message); // ✅ Remove emojis
+
+    console.log("🔹 Raw Response from Python:", message);  
+    console.log("✅ Cleaned Response for Display:", cleanedMessage);  
+
+    if (responseBox.lastChild && responseBox.lastChild.textContent === cleanedMessage) {
         return;
     }
 
-    // Create a new paragraph element for each response
     const paragraph = document.createElement("p");
-    paragraph.textContent = message;
+    paragraph.textContent = cleanedMessage;
     
     responseBox.appendChild(paragraph);
     responseBox.scrollTop = responseBox.scrollHeight; // Auto-scroll
+    // ✅ Delay speech slightly to ensure UI is updated before speaking
+    setTimeout(() => {
+        speakResponse(cleanedMessage);
+    }, 100);  // 100ms delay for UI rendering
 }
+
 
 // ✅ Handle text input from user
 document.getElementById("submit-btn").addEventListener("click", () => {

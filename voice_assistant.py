@@ -39,21 +39,33 @@ faculty_mapping = {
 }
 
 import re
+import emoji
 
 def clean_text_for_speech(text):
     """Remove emojis, markdown symbols, and links from the text before speaking."""
-    text = re.sub(r"[\U00010000-\U0010ffff]", "", text)  # Remove emojis
+    text = emoji.replace_emoji(text, replace='')  # ✅ Remove emojis using emoji library
+    text = re.sub(r"[^\w\s,.!?]", "", text)  # ✅ Extra step to remove any special symbols
+
+    # ✅ Remove Markdown formatting
     text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # Remove bold markdown (**bold** → bold)
     text = re.sub(r"\*(.*?)\*", r"\1", text)  # Remove italic markdown (*italic* → italic)
+
+    # ✅ Remove links
     text = re.sub(r"\[.*?\]\((.*?)\)", "", text)  # Remove markdown links ([Click here](URL) → "")
+
     return text.strip()
 
 def speak_text(text):
-    """Convert text to speech after cleaning it for readability."""
-    cleaned_text = clean_text_for_speech(text)
+    """Convert text to speech after removing emojis and formatting issues."""
+    cleaned_text = clean_text_for_speech(text)  # ✅ Remove emojis
+    
+    engine.setProperty('rate', 180)  # ✅ Adjust speech speed
+    
+    print(f"🔹 Raw Text: {text}")  
+    print(f"✅ Cleaned Text: {cleaned_text}")  # Debugging
+
     engine.say(cleaned_text)
     engine.runAndWait()
-
 
 def extract_entities(command):
     """Extract faculty, department, and event names from the command."""
@@ -123,7 +135,7 @@ def format_department_info(department_info):
 def format_event_info(events):
     if "error" in events:
         return "Sorry, no events found for this department."
-    output = "🎉 *Upcoming Events:*\n"
+    output = "🎉 Upcoming Events:\n"
     for event in events:
         output += f"\n📅 Event: {event.get('title', 'N/A')}\n"
         output += f"📖 Description: {event.get('description', 'N/A')}\n"
@@ -134,6 +146,7 @@ def format_event_info(events):
             output += f"🔗 More Info: [Click here]({event['link']})\n"
     return output
 
+@eel.expose
 def interpret_command(command):
     """Interpret user command and return structured response."""
     command = command.lower()
@@ -144,6 +157,8 @@ def interpret_command(command):
             department_name = entities["department"][0]
             event_info = get_event_info(department_name)
             response = format_event_info(event_info)
+            cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+            eel.displayResponse(cleaned_response) 
             #speak_text(response)  # ✅ Speak response
             return response
 
@@ -151,6 +166,8 @@ def interpret_command(command):
         department_name = entities["department"][0]
         department_info = get_department_info(department_name)
         response = format_department_info(department_info)
+        cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+        eel.displayResponse(cleaned_response) 
         #speak_text(response)  # ✅ Speak response
         return response
 
@@ -158,6 +175,8 @@ def interpret_command(command):
         faculty_name = " ".join(entities["faculty"])
         faculty_info = get_faculty_info(faculty_name)
         response = format_faculty_info(faculty_info)
+        cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+        eel.displayResponse(cleaned_response) 
         #speak_text(response)  # ✅ Speak response
         return response
 
