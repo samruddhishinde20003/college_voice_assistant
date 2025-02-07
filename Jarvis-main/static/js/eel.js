@@ -20,10 +20,10 @@ function removeEmojis(text) {
 function displayResponse(message) {
     const responseBox = document.getElementById("response-box");
 
-    let cleanedMessage = removeEmojis(message); // ✅ Remove emojis
+    let cleanedMessage = removeEmojis(message); //  Remove emojis
 
-    console.log("🔹 Raw Response from Python:", message);  
-    console.log("✅ Cleaned Response for Display:", cleanedMessage);  
+    console.log("Raw Response from Python:", message);  
+    console.log("Cleaned Response for Display:", cleanedMessage);  
 
     if (responseBox.lastChild && responseBox.lastChild.textContent === cleanedMessage) {
         return;
@@ -34,14 +34,14 @@ function displayResponse(message) {
     
     responseBox.appendChild(paragraph);
     responseBox.scrollTop = responseBox.scrollHeight; // Auto-scroll
-    // ✅ Delay speech slightly to ensure UI is updated before speaking
+    //  Delay speech slightly to ensure UI is updated before speaking
     setTimeout(() => {
         speakResponse(cleanedMessage);
     }, 100);  // 100ms delay for UI rendering
 }
 
 
-// ✅ Handle text input from user
+//  Handle text input from user
 document.getElementById("submit-btn").addEventListener("click", () => {
     const userInput = document.getElementById("text-input").value.trim();
     
@@ -54,8 +54,8 @@ document.getElementById("submit-btn").addEventListener("click", () => {
     }
 });
 
-// ✅ Handle voice input when 'Start Listening' button is clicked
+//  Handle voice input when 'Start Listening' button is clicked
 document.getElementById("start-btn").addEventListener("click", function () {
     displayResponse("Listening...");
-    eel.main(); // ✅ Call Python function only once, without extra argument
+    eel.main(); //  Call Python function only once, without extra argument
 });

@@ -43,26 +43,26 @@ import emoji
 
 def clean_text_for_speech(text):
     """Remove emojis, markdown symbols, and links from the text before speaking."""
-    text = emoji.replace_emoji(text, replace='')  # ✅ Remove emojis using emoji library
-    text = re.sub(r"[^\w\s,.!?]", "", text)  # ✅ Extra step to remove any special symbols
+    text = emoji.replace_emoji(text, replace='')  # Remove emojis using emoji library
+    text = re.sub(r"[^\w\s,.!?]", "", text)  # Extra step to remove any special symbols
 
-    # ✅ Remove Markdown formatting
+    #  Remove Markdown formatting
     text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # Remove bold markdown (**bold** → bold)
     text = re.sub(r"\*(.*?)\*", r"\1", text)  # Remove italic markdown (*italic* → italic)
 
-    # ✅ Remove links
+    #  Remove links
     text = re.sub(r"\[.*?\]\((.*?)\)", "", text)  # Remove markdown links ([Click here](URL) → "")
 
     return text.strip()
 
 def speak_text(text):
     """Convert text to speech after removing emojis and formatting issues."""
-    cleaned_text = clean_text_for_speech(text)  # ✅ Remove emojis
+    cleaned_text = clean_text_for_speech(text)  #  Remove emojis
     
-    engine.setProperty('rate', 180)  # ✅ Adjust speech speed
+    engine.setProperty('rate', 180)  #  Adjust speech speed
     
-    print(f"🔹 Raw Text: {text}")  
-    print(f"✅ Cleaned Text: {cleaned_text}")  # Debugging
+    print(f" Raw Text: {text}")  
+    print(f" Cleaned Text: {cleaned_text}")  # Debugging
 
     engine.say(cleaned_text)
     engine.runAndWait()
@@ -145,7 +145,7 @@ def format_event_info(events):
         if event.get("link"):
             output += f"🔗 More Info: [Click here]({event['link']})\n"
     return output
-from textblob import TextBlob  # ✅ Import TextBlob for sentiment analysis
+from textblob import TextBlob  #  Import TextBlob for sentiment analysis
 
 def analyze_sentiment(command):
     """Analyze the sentiment of the user's input using TextBlob."""
@@ -163,7 +163,7 @@ def interpret_command(command):
     """Interpret user command and return structured response."""
     command = command.lower()
 
-    # ✅ Handle greetings separately
+    #  Handle greetings separately
     if command in ["hello", "hi", "hey"]:
         return analyze_sentiment(command)
     
@@ -174,27 +174,27 @@ def interpret_command(command):
             department_name = entities["department"][0]
             event_info = get_event_info(department_name)
             response = format_event_info(event_info)
-            cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+            cleaned_response = clean_text_for_speech(response)  #  Ensure text is cleaned
             eel.displayResponse(cleaned_response) 
-            #speak_text(response)  # ✅ Speak response
+            #speak_text(response)  #  Speak response
             return response
 
     if entities["department"]:
         department_name = entities["department"][0]
         department_info = get_department_info(department_name)
         response = format_department_info(department_info)
-        cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+        cleaned_response = clean_text_for_speech(response)  #  Ensure text is cleaned
         eel.displayResponse(cleaned_response) 
-        #speak_text(response)  # ✅ Speak response
+        #speak_text(response)  #  Speak response
         return response
 
     if entities["faculty"]:
         faculty_name = " ".join(entities["faculty"])
         faculty_info = get_faculty_info(faculty_name)
         response = format_faculty_info(faculty_info)
-        cleaned_response = clean_text_for_speech(response)  # ✅ Ensure text is cleaned
+        cleaned_response = clean_text_for_speech(response)  #  Ensure text is cleaned
         eel.displayResponse(cleaned_response) 
-        #speak_text(response)  # ✅ Speak response
+        #speak_text(response)  #  Speak response
         return response
 
     #speak_text("I'm not sure about that. Let me check.")
@@ -240,8 +240,8 @@ def main(command):
         response = interpret_command(command)
         print(f"Response: {response}")  # Debugging
         
-        eel.display_response(response)  # ✅ Send response to frontend
-        speak_text(response)  # ✅ Speak only once
+        eel.display_response(response)  #  Send response to frontend
+        speak_text(response)  #  Speak only once
 
 
 
